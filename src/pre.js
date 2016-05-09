@@ -16,11 +16,11 @@ Module['preInit'] = function() {
     if ('[object Array]' === Object.prototype.toString.call(Module['blobs'])) {
         for (i = 0; i < Module['blobs'].length; i++) {
             var blobDescriptor = Module['blobs'][i];
-            if ('.xml' === blobDescriptor.name.slice(-4)) {
-                xmlFiles.push('._/' + blobDescriptor.name);
-            } else {
+            if ('application/xml' === blobDescriptor.type) {
+                xmlFiles.push('._/blob-' + i + '.xml');
+            } else if ('application/schema+xml' === blobDescriptor.type) {
                 Module["arguments"].push('--schema');
-                Module["arguments"].push('._/' + blobDescriptor.name);
+                Module["arguments"].push('._/blob-' + i + '.xsd');
             }
         }
     }
