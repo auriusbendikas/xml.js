@@ -1,38 +1,53 @@
+Module['preInit'] = function() {
 
-Module['preRun'] = function () {
-	var i
-	;
-	//Clamping this to `1` xml file for the moment since it's unclear how best to format the return value to support multiple xml files.
-	for (i = 0; i < (1 || Module['xml'].length); i++) {
-		FS.createDataFile('/', 'file_' + i + '.xml', Module['intArrayFromString'](Module['xml'][i]), true, true);
-	}
-	for (i = 0; i < Module['schema'].length; i++) {
-		FS.createDataFile('/', 'file_' + i + '.xsd', Module['intArrayFromString'](Module['schema'][i]), true, true);
-	}
-};
+    FS.mkdir('._');
+    FS.mount(WORKERFS, {
+        // Array of {name,data} object where data is actual blob
+        blobs : Module['blobs'],
+        // Array of File objects or FileList
+        files : Module['files']
 
-Module.arguments = ['--noout'];
+    }, '._');
 
-(function () {
-	var i
-	;
-	if ('[object Array]' !== Object.prototype.toString.call(Module['schema'])) {
-		Module['schema'] = [Module['schema']];
-	}
-	if ('[object Array]' !== Object.prototype.toString.call(Module['xml'])) {
-		Module['xml'] = [Module['xml']];
-	}
-	for (i = 0; i < Module['schema'].length; i++) {
-		Module.arguments.push('--schema');
-		Module.arguments.push('file_' + i + '.xsd');
-	}
-	for (i = 0; i < (1 || Module['xml'].length); i++) {
-		Module.arguments.push('file_' + i + '.xml');
-	}
-}());
+    Module["arguments"] = ['--noout', '--stream'];
 
-Module['return'] = '';
+    var i, xmlFiles = [];
 
-Module['stdout'] = Module['stderr'] = function (code) {
-	Module['return'] += String.fromCharCode(code);
+    if ('[object Array]' === Object.prototype.toString.call(Module['blobs'])) {
+        for (i = 0; i < Module['blobs'].length; i++) {
+            var blobDescriptor = Module['blobs'][i];
+            if ('.xml' === blobDescriptor.name.slice(-4)) {
+                xmlFiles.push('._/' + blobDescriptor.name);
+            } else {
+                Module["arguments"].push('--schema');
+                Module["arguments"].push('._/' + blobDescriptor.name);
+            }
+        }
+    }
+
+    if ('[object Array]' === Object.prototype.toString.call(Module['files'])) {
+        for (i = 0; i < Module['files'].length; i++) {
+            var file = Module['files'][i];
+            if ('.xml' === file.name.slice(-4)) {
+                xmlFiles.push('._/' + file.name);
+            } else {
+                Module["arguments"].push('--schema');
+                Module["arguments"].push('._/' + file.name);
+            }
+        }
+    }
+
+    Module["arguments"] = Module["arguments"].concat(xmlFiles);
+
+    Module['return'] = '';
+
+    Module['stdout'] = Module['stderr'] = function(code) {
+        character = String.fromCharCode(code);
+        Module['return'] += character;
+        if ('\n' === character) {
+            postMessage(Module['return']);
+            Module['return'] = '';
+        }
+
+    };
 };
