@@ -46,19 +46,18 @@ Module['preInit'] = function() {
     if ('[object Array]' === Object.prototype.toString.call(Module['blobs'])) {
         for (i = 0; i < Module['blobs'].length; i++) {
             var blob = Module['blobs'][i];
-            if ('application/xml' === blob.type) {
-                var blobName = 'blob-' + i + '.xml';
-                registerProgressNotifications(blob, blobName);
-                xmlFiles.push(folderName + blobName);
-            } else
-                if ('application/schema+xml' === blob.type) {
-                    Module["arguments"].push('--schema');
-                    Module["arguments"].push(folderName + 'blob-' + i + '.xsd');
-                }
+            if ('.xml' === blob.name.slice(-4)) {
+                registerProgressNotifications(blob.data, blob.name);
+                xmlFiles.push(folderName + blob.name);
+            } else {
+                Module["arguments"].push('--schema');
+                Module["arguments"].push(folderName + blob.name);
+            }
         }
     }
 
-    if ('[object Array]' === Object.prototype.toString.call(Module['files'])) {
+    var fileArrayType = Object.prototype.toString.call(Module['files']);
+    if ('[object Array]' === fileArrayType || '[object FileList]' === fileArrayType) {
         for (i = 0; i < Module['files'].length; i++) {
             var file = Module['files'][i];
             if ('.xml' === file.name.slice(-4)) {
